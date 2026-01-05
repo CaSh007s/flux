@@ -1,0 +1,55 @@
+{% extends "base.html" %} {% block title %}Join Flux{% endblock %} {% block
+content %}
+<div class="flex justify-center items-center min-h-[70vh]">
+  <div class="glass w-full max-w-md p-10 rounded-3xl relative overflow-hidden">
+    <div
+      class="absolute -top-10 -right-10 w-40 h-40 bg-purple-500/30 blur-[50px]"
+    ></div>
+
+    <h2 class="text-3xl font-bold mb-2">Create ID</h2>
+    <p class="text-gray-400 mb-8 text-sm">Begin your financial reset.</p>
+
+    <form method="POST" action="/signup" class="space-y-6">
+      <div>
+        <label
+          class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+          >Username</label
+        >
+        <input
+          type="text"
+          name="username"
+          required
+          class="w-full bg-slate-800/50 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition"
+        />
+      </div>
+
+      <div>
+        <label
+          class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+          >Password</label
+        >
+        <input
+          type="password"
+          name="password"
+          required
+          class="w-full bg-slate-800/50 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition"
+        />
+      </div>
+
+      <button
+        type="submit"
+        class="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg font-bold text-white hover:opacity-90 transition shadow-lg shadow-cyan-500/20"
+      >
+        Initialize Account
+      </button>
+    </form>
+
+    <div class="mt-6 text-center text-sm text-gray-500">
+      Already have an ID?
+      <a href="{{ url_for('login') }}" class="text-cyan-400 hover:underline"
+        >Login</a
+      >
+    </div>
+  </div>
+</div>
+{% endblock %}
