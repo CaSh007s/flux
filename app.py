@@ -1,14 +1,33 @@
-from flask import Flask, render_template, redirect, url_for, request, flash
+import os
+from dotenv import load_dotenv
+from google import genai # Using the new library
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, User, Transaction, Goal
 from models import db, User, Transaction, Goal, Subscription
 
+# 1. Load Environment Variables
+load_dotenv()
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'flux_secret_key_change_this_later'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///flux.db'
+
+# 2. Configure App
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# 3. Configure AI
+api_key = os.getenv('GOOGLE_API_KEY')
+client = None
+
+if api_key:
+    try:
+        client = genai.Client(api_key=api_key)
+    except Exception as e:
+        print(f"Error initializing AI: {e}")
+else:
+    print("WARNING: GOOGLE_API_KEY not found in .env")
 
 # Initialize DB and Login Manager
 db.init_app(app)
@@ -186,6 +205,49 @@ def add_subscription():
     db.session.add(new_sub)
     db.session.commit()
     return redirect(url_for('dashboard'))
+
+@app.route('/roast_me', methods=['GET'])
+@login_required
+def roast_me():
+    # Safety Check
+    if not client:
+        return jsonify({'roast': "System Error: AI Brain not found. Check your .env file."})
+
+    # 1. Gather User's Financial Shame
+    transactions = Transaction.query.filter_by(user_id=current_user.id).all()
+    goals = Goal.query.filter_by(user_id=current_user.id).all()
+    
+    total_spent = sum(t.amount for t in transactions if t.type == 'expense')
+    balance = sum(t.amount for t in transactions if t.type == 'income') - total_spent
+    
+    categories = {}
+    for t in transactions:
+        if t.type == 'expense':
+            categories[t.category] = categories.get(t.category, 0) + t.amount
+    top_category = max(categories, key=categories.get) if categories else "Nothing"
+    
+    # 2. Construct the Prompt
+    prompt = f"""
+    You are a rude, snarky financial advisor. 
+    My stats:
+    - Balance: ₹{balance}
+    - Total Spent: ₹{total_spent}
+    - Top Expense: {top_category} for ₹{categories.get(top_category, 0)}
+    - Savings Jars: {len(goals)}
+    
+    Roast me in one short, brutal sentence.
+    """
+    
+    try:
+        # NEW CALL SYNTAX (google-genai)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        return jsonify({'roast': response.text})
+    except Exception as e:
+        print(f"AI Error: {e}")
+        return jsonify({'roast': "I'm currently offline due to a budget cut. Try again later."})
 
 # Create DB if not exists
 with app.app_context():
