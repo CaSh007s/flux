@@ -409,7 +409,7 @@ content %}
           <input
             type="text"
             name="description"
-            placeholder="Description (e.g. Chai Sutra)"
+            placeholder="Description (e.g. Pizza Night)"
             required
             class="w-full bg-slate-900/50 border border-gray-700/50 rounded-xl p-3 text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition"
           />
@@ -521,11 +521,162 @@ content %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+  // --- CHART ---
   const labels = {{ chart_labels | tojson }};
   const data = {{ chart_values | tojson }};
+  const ctx = document.getElementById('expenseChart').getContext('2d');
+  if (labels.length > 0) {
+      new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+              labels: labels,
+              datasets: [{
+                  data: data,
+                  backgroundColor: ['#06b6d4', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'],
+                  borderWidth: 0,
+                  hoverOffset: 15
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              cutout: '75%',
+              plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10, family: 'Outfit' }, usePointStyle: true, boxWidth: 8 } } },
+              animation: { animateScale: true, animateRotate: true }
+          }
+      });
+  } else {
+      ctx.font = "14px Outfit";
+      ctx.fillStyle = "#64748b";
+      ctx.textAlign = "center";
+      ctx.fillText("No expenses logged", ctx.canvas.width/2, ctx.canvas.height/2);
+  }
 
-  // Call the function from script.js
-  initChart(labels, data);
+  // --- MODAL LOGIC (ALL TOGGLES) ---
+  function toggleModal() { document.getElementById("transactionModal").classList.toggle("hidden"); }
+  function toggleGoalModal() { document.getElementById("goalModal").classList.toggle("hidden"); }
+  function toggleSubModal() { document.getElementById("subModal").classList.toggle("hidden"); }
+  function closeRoast() { document.getElementById('roastModal').classList.add('hidden'); }
+
+  // --- ROAST FETCH LOGIC ---
+  async function getRoast() {
+      const modal = document.getElementById('roastModal');
+      const text = document.getElementById('roastText');
+      modal.classList.remove('hidden');
+      text.innerText = "Consulting the Council of High Finance...";
+      try {
+          const response = await fetch('/roast_me');
+          const data = await response.json();
+          text.innerText = `"${data.roast}"`;
+      } catch (error) {
+          console.error(error);
+          text.innerText = "Even the AI is speechless at your spending.";
+      }
+  }
 </script>
+
+<button onclick="toggleGuide()" class="fixed bottom-6 right-6 z-50 group">
+  <div
+    class="px-5 py-3 glass rounded-full flex items-center gap-2 transition-all duration-300 group-hover:bg-cyan-500/20 group-hover:scale-105 border border-white/20 shadow-[0_0_20px_rgba(0,0,0,0.5)]"
+  >
+    <span class="text-xl group-hover:rotate-12 transition transform">✨</span>
+    <span class="font-bold text-sm text-gray-200 group-hover:text-white"
+      >Help & Guide</span
+    >
+  </div>
+  <div
+    class="absolute inset-0 rounded-full bg-cyan-500/30 blur-md animate-pulse -z-10 group-hover:bg-cyan-400/50 transition"
+  ></div>
+</button>
+
+<div id="guideModal" class="fixed inset-0 z-[70] hidden">
+  <div
+    class="absolute inset-0 bg-black/90 backdrop-blur-md"
+    onclick="toggleGuide()"
+  ></div>
+  <div
+    class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl p-4"
+  >
+    <div
+      class="glass p-8 rounded-3xl border border-white/10 shadow-2xl relative"
+    >
+      <div class="flex justify-between items-start mb-6">
+        <div>
+          <h2
+            class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400"
+          >
+            Welcome to Flux.
+          </h2>
+          <p class="text-gray-400 text-sm mt-1">Your Personal Finance OS.</p>
+        </div>
+        <button
+          onclick="toggleGuide()"
+          class="text-gray-500 hover:text-white text-2xl"
+        >
+          &times;
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div
+          class="p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition"
+        >
+          <div class="text-2xl mb-2">👻</div>
+          <h3 class="font-bold text-white mb-1">Ghost Mode</h3>
+          <p class="text-xs text-gray-400 leading-relaxed">
+            The app silently compares your current spending vs. last month.
+            <span class="text-red-400">Red ▲</span> means you're spending more.
+            <span class="text-green-400">Green ▼</span> means you're saving.
+          </p>
+        </div>
+
+        <div
+          class="p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition"
+        >
+          <div class="text-2xl mb-2">⚗️</div>
+          <h3 class="font-bold text-white mb-1">Liquid Jars</h3>
+          <p class="text-xs text-gray-400 leading-relaxed">
+            Create visual savings goals. The jars fill up with
+            <span class="text-cyan-400">liquid animations</span> as you add
+            funds.
+          </p>
+        </div>
+
+        <div
+          class="p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition"
+        >
+          <div class="text-2xl mb-2">🔥</div>
+          <h3 class="font-bold text-white mb-1">AI Roast</h3>
+          <p class="text-xs text-gray-400 leading-relaxed">
+            Click the flame icon to let
+            <span class="text-purple-400">Google Gemini AI</span> analyze your
+            database and roast your spending habits.
+          </p>
+        </div>
+
+        <div
+          class="p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition"
+        >
+          <div class="text-2xl mb-2">⚔️</div>
+          <h3 class="font-bold text-white mb-1">Subscription Slayer</h3>
+          <p class="text-xs text-gray-400 leading-relaxed">
+            Track recurring bills. The app calculates your
+            <span class="text-red-400">Monthly Burn Rate</span>—the amount you
+            lose automatically.
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-8 text-center">
+        <button
+          onclick="toggleGuide()"
+          class="px-8 py-3 bg-white text-slate-900 font-bold rounded-full hover:bg-cyan-400 hover:text-white transition"
+        >
+          Got it
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% endblock %}

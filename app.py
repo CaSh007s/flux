@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Transaction, Goal, Subscription
+from datetime import datetime, timedelta
 
 # 1. Load Environment Variables
 load_dotenv()
@@ -100,7 +101,32 @@ def dashboard():
     total_expense = sum(t.amount for t in transactions if t.type == 'expense')
     balance = total_income - total_expense
     
-    # 3. Calculate Monthly Burn Rate
+    # 3. GHOST MODE
+    today = datetime.now()
+    first_this_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # Calculate previous month start/end
+    last_month_end = first_this_month - timedelta(days=1)
+    first_last_month = last_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # Filter expenses
+    this_month_expense = sum(t.amount for t in transactions 
+                             if t.type == 'expense' and t.date >= first_this_month)
+    
+    last_month_expense = sum(t.amount for t in transactions 
+                             if t.type == 'expense' and first_last_month <= t.date < first_this_month)
+    
+    # Calculate Delta 
+    if last_month_expense > 0:
+        delta = ((this_month_expense - last_month_expense) / last_month_expense) * 100
+    else:
+        delta = 100 if this_month_expense > 0 else 0
+        
+    # Format for UI
+    delta = round(delta, 1)
+    is_spending_up = delta > 0
+
+    # 4. Subscription Burn Rate
     monthly_burn = 0
     for sub in subscriptions:
         if sub.billing_cycle == 'Monthly':
@@ -108,7 +134,7 @@ def dashboard():
         elif sub.billing_cycle == 'Yearly':
             monthly_burn += (sub.amount / 12)
             
-    # 4. Chart Data
+    # 5. Chart Data
     expense_by_category = {}
     for t in transactions:
         if t.type == 'expense':
@@ -126,6 +152,9 @@ def dashboard():
                            balance=balance,
                            income=total_income,
                            expense=total_expense,
+                           delta=delta,
+                           is_spending_up=is_spending_up,
+                           this_month_expense=this_month_expense,
                            chart_labels=chart_labels,
                            chart_values=chart_values)
 

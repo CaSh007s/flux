@@ -110,3 +110,8 @@ function initChart(labels, data) {
     );
   }
 }
+
+function toggleGuide() {
+  const el = document.getElementById("guideModal");
+  if (el) el.classList.toggle("hidden");
+}

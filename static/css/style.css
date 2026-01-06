@@ -63,3 +63,12 @@ function initChart(labels, data) {
         ctx.fillText("No expenses logged", ctx.canvas.width/2, ctx.canvas.height/2);
     }
 }
+
+/* STRONGER NAVBAR GLASS */
+.nav-glass {
+    background: rgba(15, 23, 42, 0.95); 
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+}
